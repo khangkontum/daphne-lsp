@@ -1,0 +1,277 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "DaphneDSL",
+  "scopeName": "source.daphnedsl",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#sql-call"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#function-definition"
+    },
+    {
+      "include": "#cast"
+    },
+    {
+      "include": "#keyword"
+    },
+    {
+      "include": "#type"
+    },
+    {
+      "include": "#constant"
+    },
+    {
+      "include": "#number"
+    },
+    {
+      "include": "#script-argument"
+    },
+    {
+      "include": "#kernel-hint"
+    },
+    {
+      "include": "#builtin-function-call"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#namespace"
+    },
+    {
+      "include": "#operator"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#variable"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.daphnedsl",
+          "match": "#.*$"
+        },
+        {
+          "name": "comment.line.double-slash.daphnedsl",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.daphnedsl",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "string": {
+      "name": "string.quoted.double.daphnedsl",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "include": "#string-escape"
+        }
+      ]
+    },
+    "string-escape": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.daphnedsl",
+          "match": "\\\\[bfnrt\"\\\\]"
+        },
+        {
+          "name": "invalid.illegal.unknown-escape.daphnedsl",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "sql-call": {
+      "comment": "The query passed to the built-in function `sql` is SQL.",
+      "begin": "(?<![.\\w])(sql)\\s*(\\()\\s*(\")",
+      "beginCaptures": {
+        "1": {
+          "name": "support.function.builtin.daphnedsl"
+        },
+        "2": {
+          "name": "punctuation.section.parens.begin.daphnedsl"
+        },
+        "3": {
+          "name": "string.quoted.double.daphnedsl"
+        }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": {
+          "name": "string.quoted.double.daphnedsl"
+        }
+      },
+      "contentName": "meta.embedded.inline.sql",
+      "patterns": [
+        {
+          "include": "#string-escape"
+        },
+        {
+          "include": "source.sql"
+        }
+      ]
+    },
+    "function-definition": {
+      "match": "\\b(def)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.function.daphnedsl"
+        },
+        "2": {
+          "name": "entity.name.function.daphnedsl"
+        }
+      }
+    },
+    "cast": {
+      "match": "\\b(as)\\s*(\\.)\\s*(matrix|scalar|frame|f64|f32|si64|si32|si8|ui64|ui32|ui8|str|bool)\\b",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.cast.daphnedsl"
+        },
+        "2": {
+          "name": "punctuation.accessor.daphnedsl"
+        },
+        "3": {
+          "name": "support.type.daphnedsl"
+        }
+      }
+    },
+    "keyword": {
+      "patterns": [
+        {
+          "name": "keyword.control.daphnedsl",
+          "match": "\\b(if|else|while|do|for|in|return)\\b"
+        },
+        {
+          "name": "keyword.control.import.daphnedsl",
+          "match": "\\b(import|as)\\b"
+        },
+        {
+          "name": "storage.type.function.daphnedsl",
+          "match": "\\bdef\\b"
+        }
+      ]
+    },
+    "type": {
+      "name": "support.type.daphnedsl",
+      "match": "\\b(matrix|scalar|frame|f64|f32|si64|si32|si8|ui64|ui32|ui8|str|bool)\\b"
+    },
+    "constant": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.daphnedsl",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.numeric.float.daphnedsl",
+          "match": "\\b(nanf?|inff?)\\b"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.daphnedsl",
+          "match": "\\b(?:0|[1-9](?:[_']?[0-9])*)(?:\\.[0-9]+(?:[_']?[0-9])*(?:[eE][-+]?(?:0|[1-9][0-9]*))?|[eE][-+]?(?:0|[1-9][0-9]*))f?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.daphnedsl",
+          "match": "\\b(?:0|[1-9](?:[_']?[0-9])*)(?:ull|l|u|z)?\\b"
+        }
+      ]
+    },
+    "script-argument": {
+      "name": "variable.parameter.daphnedsl",
+      "match": "\\$[A-Za-z_]\\w*"
+    },
+    "kernel-hint": {
+      "match": "(::)\\s*([A-Za-z_]\\w*)",
+      "captures": {
+        "1": {
+          "name": "punctuation.separator.daphnedsl"
+        },
+        "2": {
+          "name": "entity.other.attribute-name.daphnedsl"
+        }
+      }
+    },
+    "builtin-function-call": {
+      "comment": "`match` is generated by scripts/update-builtins.mjs",
+      "name": "support.function.builtin.daphnedsl",
+      "match": "(?<![.\\w])(conv2d_backward_filter|batch_norm2d_backward|conv2d_backward_data|avg_pool2d_backward|max_pool2d_backward|saveDaphneLibResult|setColLabelsPrefix|openFileOnTarget|receiveFromNumpy|startProfiling|fullOuterJoin|leftOuterJoin|stopProfiling|batch_norm2d|registerView|setColLabels|createFrame|isSymmetric|outerConcat|writeMatrix|avg_pool2d|createList|diagMatrix|diagVector|max_pool2d|openDevice|readMatrix|writeFrame|cartesian|groupJoin|innerJoin|intersect|readFrame|transpose|antiJoin|groupSum|lowerTri|openFile|outerAdd|outerAnd|outerDiv|outerLog|outerMax|outerMin|outerMod|outerMul|outerNeq|outerPow|outerSub|outerXor|quantize|semiJoin|sparsity|upperTri|biasAdd|cumProd|outerEq|outerGe|outerGt|outerLe|outerLt|outerOr|readCsv|replace|reshape|reverse|softmax|affine|aggMax|aggMin|append|concat|conv2d|ctable|cumMax|cumMin|cumSum|except|idxMax|idxMin|length|oneHot|recode|remove|sample|stddev|typeOf|cbind|close|count|eigen|floor|isNan|lower|merge|minus|ncell|order|print|rbind|round|solve|upper|write|acos|asin|atan|ceil|cosh|fill|gemv|mean|ncol|nrow|rand|relu|sign|sinh|sqrt|stop|syrk|tanh|abs|bin|cos|exp|log|map|max|min|mod|now|pow|seq|sin|sql|sum|tan|var|ln|t)(?=\\s*(?:::\\s*[A-Za-z_]\\w*\\s*)?\\()"
+    },
+    "function-call": {
+      "name": "entity.name.function.daphnedsl",
+      "match": "\\b[A-Za-z_]\\w*(?=\\s*(?:::\\s*[A-Za-z_]\\w*\\s*)?\\()"
+    },
+    "namespace": {
+      "match": "\\b([A-Za-z_]\\w*)\\s*(\\.)(?=\\s*[A-Za-z_])",
+      "captures": {
+        "1": {
+          "name": "entity.name.namespace.daphnedsl"
+        },
+        "2": {
+          "name": "punctuation.accessor.daphnedsl"
+        }
+      }
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.daphnedsl",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.comparison.daphnedsl",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.logical.daphnedsl",
+          "match": "&&|\\|\\|"
+        },
+        {
+          "name": "keyword.operator.assignment.daphnedsl",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.arithmetic.daphnedsl",
+          "match": "[-+*/%^@]"
+        },
+        {
+          "name": "keyword.operator.ternary.daphnedsl",
+          "match": "[?:]"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.terminator.statement.daphnedsl",
+          "match": ";"
+        },
+        {
+          "name": "punctuation.separator.daphnedsl",
+          "match": ","
+        }
+      ]
+    },
+    "variable": {
+      "name": "variable.other.daphnedsl",
+      "match": "\\b[A-Za-z_]\\w*\\b"
+    }
+  }
+}

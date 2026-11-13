@@ -1,0 +1,50 @@
+{
+  "name": "daphnedsl",
+  "displayName": "DaphneDSL",
+  "description": "Syntax highlighting and syntax error reporting for DaphneDSL, the language of the DAPHNE system",
+  "version": "0.1.0",
+  "publisher": "khangkontum",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/khangkontum/daphne-lsp"
+  },
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./dist/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "daphnedsl",
+        "aliases": [
+          "DaphneDSL",
+          "daphnedsl"
+        ],
+        "extensions": [
+          ".daphne",
+          ".daph"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "daphnedsl",
+        "scopeName": "source.daphnedsl",
+        "path": "./syntaxes/daphnedsl.tmLanguage.json",
+        "embeddedLanguages": {
+          "meta.embedded.inline.sql": "sql"
+        }
+      }
+    ]
+  }
+}
