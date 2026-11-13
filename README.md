@@ -1,6 +1,6 @@
 # daphne-lsp
 
-Editor support for [DaphneDSL](https://github.com/daphne-eu/daphne), the language of the DAPHNE system (`.daphne` and `.daph` files): syntax highlighting, and syntax errors while you type, in Neovim, Vim and VS Code.
+Editor support for [DaphneDSL](https://github.com/daphne-eu/daphne), the language of the DAPHNE system (`.daphne` and `.daph` files): syntax highlighting, syntax errors while you type, and a formatter, in Neovim, Vim and VS Code.
 
 ## Demo
 
@@ -28,7 +28,7 @@ The colors come from your own color scheme. The Neovim and Vim screenshots use t
 | Neovim syntax highlighting | `queries/`, `ftdetect/`, `ftplugin/` | Works |
 | Vim syntax highlighting | `syntax/`, `ftdetect/`, `ftplugin/` | Works |
 | VS Code extension | `vscode/` | Works, not published to the Marketplace |
-| Language server | `server/`, `plugin/` | Reports syntax errors in Neovim, Vim and VS Code |
+| Language server | `server/`, `plugin/` | Reports syntax errors and formats documents in Neovim, Vim and VS Code |
 
 ## Installation
 
@@ -44,11 +44,11 @@ Open the section for your editor. Everything here was tested on Linux only.
 | For | You need |
 | --- | --- |
 | Highlighting | A C compiler and `make`, to build the parser once |
-| Syntax errors | Also Node.js, and Neovim 0.11 or newer |
+| Syntax errors and formatting | Also Node.js, and Neovim 0.11 or newer |
 
 **Install with lazy.nvim**
 
-Highlighting and syntax errors:
+Highlighting, syntax errors and formatting:
 
 ```lua
 { 'khangkontum/daphne-lsp', build = 'make parser server' }
@@ -82,6 +82,15 @@ Neovim marks each error in the sign column and underlines it. To also show the m
 vim.diagnostic.config({ virtual_text = true })
 ```
 
+Format the buffer with `:lua vim.lsp.buf.format()`. To format each time you save:
+
+```lua
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = { '*.daphne', '*.daph' },
+  callback = function() vim.lsp.buf.format() end,
+})
+```
+
 Turn the language server off with `vim.lsp.enable('daphnedsl', false)`.
 
 **Notes**
@@ -102,11 +111,11 @@ Turn the language server off with `vim.lsp.enable('daphnedsl', false)`.
 | For | You need |
 | --- | --- |
 | Highlighting | `filetype plugin on` and `syntax on` in your vimrc. Nothing needs to be built |
-| Syntax errors | Also Node.js, `make`, and an LSP client plugin: [yegappan/lsp](https://github.com/yegappan/lsp) or [vim-lsp](https://github.com/prabirshrestha/vim-lsp) |
+| Syntax errors and formatting | Also Node.js, `make`, and an LSP client plugin: [yegappan/lsp](https://github.com/yegappan/lsp) or [vim-lsp](https://github.com/prabirshrestha/vim-lsp) |
 
 **Install with vim-plug**
 
-Highlighting and syntax errors:
+Highlighting, syntax errors and formatting:
 
 ```vim
 Plug 'yegappan/lsp'
@@ -124,7 +133,7 @@ Plug 'khangkontum/daphne-lsp'
 ```sh
 git clone https://github.com/khangkontum/daphne-lsp ~/.vim/pack/plugins/start/daphne-lsp
 cd ~/.vim/pack/plugins/start/daphne-lsp
-make server   # only for syntax errors
+make server   # only for syntax errors and formatting
 ```
 
 `make server` runs `npm ci` and builds `server/dist/`. The first build downloads a WebAssembly toolchain, so it takes a while.
@@ -137,6 +146,15 @@ With yegappan/lsp, this shows the message next to the line, as in the screenshot
 
 ```vim
 autocmd User LspSetup call LspOptionsSet({'showDiagWithVirtualText': v:true, 'diagVirtualTextAlign': 'after'})
+```
+
+Format the buffer with `:LspFormat` (yegappan/lsp) or `:LspDocumentFormat` (vim-lsp). To format each time you save:
+
+```vim
+" yegappan/lsp
+autocmd BufWritePre *.daphne,*.daph LspFormat
+" vim-lsp
+autocmd BufWritePre *.daphne,*.daph LspDocumentFormatSync
 ```
 
 **Notes**
@@ -173,6 +191,12 @@ Instead of the last command, you can run "Extensions: Install from VSIX..." from
 
 Opening a `.daphne` or `.daph` file highlights it and lists its syntax errors in the Problems panel (Ctrl+Shift+M). The extension runs the language server with the Node.js that is built into VS Code, and it also works in Restricted Mode.
 
+Format with "Format Document" from the Command Palette. To format each time you save, add this to your settings:
+
+```json
+"[daphnedsl]": { "editor.formatOnSave": true }
+```
+
 **Notes**
 
 - VS Code highlights with a TextMate grammar (regular expressions), not with the tree-sitter grammar, so it is less precise. For example, it cannot tell the `<` of `matrix<f64>` from a comparison.
@@ -191,13 +215,13 @@ Build the language server with `make server` (it needs Node.js), then let your e
 node /path/to/daphne-lsp/server/dist/server.cjs --stdio
 ```
 
-This gives syntax errors only. Highlighting needs the tree-sitter grammar or the Vim syntax file from this repository.
+This gives syntax errors and formatting (`textDocument/formatting`). Highlighting needs the tree-sitter grammar or the Vim syntax file from this repository.
 
 </details>
 
 ## Language server
 
-`server/` is a language server that parses each open document with the tree-sitter grammar (compiled to WebAssembly) and reports its syntax errors.
+`server/` is a language server that parses each open document with the tree-sitter grammar (compiled to WebAssembly). It reports the document's syntax errors, and it formats the document on request.
 
 It reports syntax errors only: a missing `;`, an unclosed bracket, an unterminated string, tokens that do not belong. It does not know about names or types, so it accepts `x = undefinedVariable + "a";`. DAPHNE's own compiler finds those errors when the script runs.
 
@@ -205,11 +229,69 @@ The messages are not DAPHNE's messages. The error is usually reported on the sam
 
 With several errors in one file, the parser sometimes cannot recover, and the server then reports only one of them. The others appear once that one is fixed.
 
+### Formatter
+
+The style is fixed and has no options, like `gofmt`. The editor's tab size is ignored.
+
+Before:
+
+```
+def  normalize ( X:matrix<f64>,eps )->matrix<f64>
+{
+  mu=mean(X,1);  sd = stddev(X,1)+eps ;   # column-wise
+  if(sum(sd==0)>0)
+        return X-mu;
+  else
+  {
+     return (X-mu)/sd ;
+  }
+}
+
+f = { "a":[1,2,3],
+        "b" : [4.0,5.0,6.0] };
+X=normalize(as.matrix<f64>(f),1e-9)[ ,0];
+```
+
+After:
+
+```
+def normalize(X: matrix<f64>, eps) -> matrix<f64> {
+    mu = mean(X, 1);
+    sd = stddev(X, 1) + eps; # column-wise
+    if (sum(sd == 0) > 0)
+        return X - mu;
+    else {
+        return (X - mu) / sd;
+    }
+}
+
+f = {"a": [1, 2, 3],
+    "b": [4.0, 5.0, 6.0]};
+X = normalize(as.matrix<f64>(f), 1e-9)[, 0];
+```
+
+The style:
+
+- 4 spaces for each block level, and no tabs.
+- `{` goes on the line of its statement: `if (a) {`, `} else {`, `} while (a);`.
+- Each statement gets its own line. A body without braces goes on the next line, indented.
+- Spaces go around binary operators, `=`, `->`, and the `?` and `:` of a conditional. A space follows `,`, the `:` of `x: type` and of `"label": column`, and `if`, `for` and `while`.
+- No space goes after a unary sign, inside brackets, before the `(` of a call, or around `.`, `::`, the `:` of a range and the `=` of a named argument: `fill(value=2, numRows=3)`.
+- Indexing is written as in DAPHNE's language reference: `X[, 0]` and `X[1, ]`.
+- Blank lines collapse to one, and go away at the start and end of a block. Lines have no trailing whitespace, and the file ends with one line break. Windows line endings are kept.
+
+What the formatter does not do:
+
+- It only changes whitespace. It never adds or removes braces, `;` or comments, and it never joins or splits a token.
+- It does not wrap long lines. A line break that you put inside an expression stays, and the next line is re-indented.
+- It does not change the text of a comment. A comment stays at the end of its line or on its own line, trailing comments are not aligned, and the later lines of a `/* ... */` comment keep the indentation they had.
+- It does not format a document that has syntax errors, and it formats whole documents only, not a selection.
+
 ## Limitations
 
 - Highlighting does not report errors. The language server does, and only syntax errors.
 - Built-in functions are a list of names (`data/builtins.txt`) taken from DAPHNE's source. A variable with the same name as a built-in is highlighted as a function only where it is called.
-- One known difference from DAPHNE's parser: DAPHNE reads `]]` as a single token, so it rejects `X[, [0, 2]]` and wants `X[, [0, 2] ]`. This grammar accepts both.
+- One known difference from DAPHNE's parser: DAPHNE reads `]]` as a single token, so it rejects `X[, [0, 2]]` and wants `X[, [0, 2] ]`. This grammar accepts both, and the formatter writes the form that DAPHNE accepts.
 
 ## Development
 
