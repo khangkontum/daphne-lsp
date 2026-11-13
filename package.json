@@ -1,0 +1,27 @@
+{
+  "name": "tree-sitter-daphnedsl",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar, language server and editor support for DaphneDSL",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": "github:khangkontum/daphne-lsp",
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "builtins": "node scripts/update-builtins.mjs",
+    "build": "node scripts/build-server.mjs",
+    "typecheck": "tsc -p .",
+    "test": "node --test --test-timeout=30000 \"server/test/*.test.ts\"",
+    "build:vscode": "npm run build && node scripts/build-vscode.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/vscode": "~1.91.0",
+    "esbuild": "^0.28.2",
+    "tree-sitter-cli": "^0.27.2",
+    "typescript": "^7.0.2",
+    "vscode-languageclient": "^11.0.0",
+    "vscode-languageserver": "^11.0.0",
+    "vscode-languageserver-textdocument": "^1.0.16",
+    "web-tree-sitter": "^0.27.2"
+  }
+}

@@ -1,0 +1,32 @@
+// Statements and literals that are easy to confuse with each other.
+{ }
+{ x = 1; };
+{ [1, 2]; }
+f = {};
+f = {"a": [1, 2], "b": [3, 4]};
+f = {["a", "b"], [1, 2], [3, 4]};
+x[0, 0] = 1;
+x[0, 0];
+a, b[, 1], ns.c = f();
+m = [1, 2, 3, 4](2, 2);
+m = [1, 2, 3, 4](2, );
+m = [](, 1);
+y = x[1:, :2];
+y = x[:, ];
+y = x[, c ? 1 : 2];
+y = x[[rows, cols]];
+y = x[[, cols]];
+y = x[ [0, 1], ];
+z = as.matrix<f64>(x) < as.scalar(y);
+z = as.si64(1.5e3f) + 1'000'000ull + 0z + nanf + inff;
+if (a) if (b) c = 1; else c = 2;
+do x = x + 1; while (x < 3)
+do { x = x + 1; } while (x < 3);
+while (x) { x = x - 1; };
+for (i in 0:n - 1:2) print(i);
+def g(a, b: matrix<f64>, c: si64,) -> matrix<f64>, f64 { return a, 1.0; }
+def h() { return; }
+import "lib.daphne";
+import "lib.daphne" as "lib";
+r = lib.sub.fn::kernel(a=1, 2,);
+s = $arg + "a \"quoted\" \\ string";

@@ -1,0 +1,10 @@
+node_modules/
+.cache/
+/parser/
+/build/
+/server/dist/
+/vscode/dist/
+/vscode/server/
+*.wasm
+*.vsix
+__pycache__/

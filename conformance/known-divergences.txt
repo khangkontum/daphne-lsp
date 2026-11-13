@@ -1,0 +1,5 @@
+# Scripts on which the tree-sitter grammar and DAPHNE's ANTLR grammar are known
+# to disagree. One path per line, as printed by check.py.
+
+# ANTLR's lexer always reads `]]` as one token, so it rejects `[0, 1, [2, 3]]`.
+daphne/test/api/cli/expressions/matrix_literal_failure_2.daphne

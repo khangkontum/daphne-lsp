@@ -1,0 +1,19 @@
+// Expressions whose tree depends on operator precedence and associativity.
+a = -x @ y;
+a = -x ^ 2;
+a = x ^ y ^ z;
+a = x @ y ^ z % w * v + u;
+a = u + v * w % z ^ y @ x;
+a = x - y - z;
+a = x / y * z;
+a = x % y % z;
+a = x < y == z;
+a = x && y || z && w;
+a = x || y && z;
+a = c ? x : d ? y : z;
+a = c ? d ? x : y : z;
+a = x + y ? z : w;
+a = -x[0, 0];
+a = -f(x)[0, 0] @ y;
+a = x +::kernel y *::kernel z;
+a = x == y ? 1 : 2 + 3;
