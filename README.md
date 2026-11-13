@@ -1,5 +1,8 @@
 # daphne-lsp
 
+LSP, formatter for daphne, mostly to serve for personal work on the LDE project. The rest of the README is written by llm.
+---
+
 Editor support for [DaphneDSL](https://github.com/daphne-eu/daphne), the language of the DAPHNE system (`.daphne` and `.daph` files): syntax highlighting, syntax errors while you type, and a formatter, in Neovim, Vim and VS Code.
 
 ## Demo
