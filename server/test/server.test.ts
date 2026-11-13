@@ -6,10 +6,12 @@ import { once } from 'node:events';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import lsp from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 const serverPath = fileURLToPath(new URL('../dist/server.cjs', import.meta.url));
 
-test('publishes syntax errors when a document is opened, changed and closed', async () => {
+/** Starts the server and completes the initialize handshake. */
+async function startServer() {
   const server = spawn(process.execPath, [serverPath, '--stdio'], { stdio: ['pipe', 'pipe', 'inherit'] });
   const connection = lsp.createProtocolConnection(
     new lsp.StreamMessageReader(server.stdout),
@@ -33,11 +35,24 @@ test('publishes syntax errors when a document is opened, changed and closed', as
   };
   connection.listen();
 
-  const uri = 'file:///tmp/example.daphne';
-  await orCrash(
+  const initialized = await orCrash(
     connection.sendRequest(lsp.InitializeRequest.type, { processId: process.pid, rootUri: null, capabilities: {} }),
   );
   await connection.sendNotification(lsp.InitializedNotification.type, {});
+
+  const stop = async () => {
+    const exited = once(server, 'exit');
+    await connection.sendRequest(lsp.ShutdownRequest.type);
+    await connection.sendNotification(lsp.ExitNotification.type);
+    const [exitCode] = await exited;
+    assert.equal(exitCode, 0);
+  };
+  return { connection, capabilities: initialized.capabilities, orCrash, nextPublished, stop };
+}
+
+test('publishes syntax errors when a document is opened, changed and closed', async () => {
+  const { connection, nextPublished, stop } = await startServer();
+  const uri = 'file:///tmp/example.daphne';
 
   await connection.sendNotification(lsp.DidOpenTextDocumentNotification.type, {
     textDocument: { uri, languageId: 'daphnedsl', version: 1, text: 'x = 1\ny = 2;\n' },
@@ -72,9 +87,32 @@ test('publishes syntax errors when a document is opened, changed and closed', as
   await connection.sendNotification(lsp.DidCloseTextDocumentNotification.type, { textDocument: { uri } });
   assert.deepEqual((await nextPublished()).diagnostics, []);
 
-  const exited = once(server, 'exit');
-  await connection.sendRequest(lsp.ShutdownRequest.type);
-  await connection.sendNotification(lsp.ExitNotification.type);
-  const [exitCode] = await exited;
-  assert.equal(exitCode, 0);
+  await stop();
+});
+
+test('formats a document on request, unless it has syntax errors', async () => {
+  const { connection, capabilities, orCrash, stop } = await startServer();
+  assert.equal(capabilities.documentFormattingProvider, true);
+
+  const formatted = async (uri: string, text: string) => {
+    await connection.sendNotification(lsp.DidOpenTextDocumentNotification.type, {
+      textDocument: { uri, languageId: 'daphnedsl', version: 1, text },
+    });
+    const edits = await orCrash(
+      connection.sendRequest(lsp.DocumentFormattingRequest.type, {
+        textDocument: { uri },
+        // The style is fixed: these options must not change the result.
+        options: { tabSize: 2, insertSpaces: false },
+      }),
+    );
+    return edits && TextDocument.applyEdits(TextDocument.create(uri, 'daphnedsl', 1, text), edits);
+  };
+
+  assert.equal(
+    await formatted('file:///tmp/valid.daphne', 'if(x>1)\r\n{\r\n  y=[1,2];  # é\r\n}'),
+    'if (x > 1) {\r\n    y = [1, 2]; # é\r\n}\r\n',
+  );
+  assert.equal(await formatted('file:///tmp/broken.daphne', 'if(x>1) {\n  y=[1,2;\n}\n'), null);
+
+  await stop();
 });

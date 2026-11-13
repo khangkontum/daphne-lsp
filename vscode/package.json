@@ -1,7 +1,7 @@
 {
   "name": "daphnedsl",
   "displayName": "DaphneDSL",
-  "description": "Syntax highlighting and syntax error reporting for DaphneDSL, the language of the DAPHNE system",
+  "description": "Syntax highlighting, syntax error reporting and formatting for DaphneDSL, the language of the DAPHNE system",
   "version": "0.1.0",
   "publisher": "khangkontum",
   "license": "Apache-2.0",
